@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block titulo %}Panel de paciente{% endblock %}
+{% block rol %}Paciente{% endblock %}
+{% block encabezado %}Mis citas{% endblock %}
+{% block menu %}
+<button class="nav-btn" type="button" data-ir="v-citas" data-titulo="Mis citas"><span>📋</span>Mis citas</button>
+<button class="nav-btn" type="button" data-ir="v-agendar" data-titulo="Agendar cita"><span>🗓️</span>Agendar cita</button>
+<button class="nav-btn" type="button" data-ir="v-espera" data-titulo="Lista de espera"><span>⏳</span>Lista de espera</button>
+<button class="nav-btn" type="button" data-ir="v-datos" data-titulo="Mis datos"><span>👤</span>Mis datos</button>
+{% endblock %}
+{% block contenido %}
+{% set colores = {'PROGRAMADA':'amber','CONFIRMADA':'sky','ATENDIDA':'emerald','CANCELADA':'red'} %}
+
+<section class="vista" id="v-citas">
+  <div class="card" style="background:linear-gradient(135deg,#0284c7,#14b8a6);color:#fff;border:0">
+    <p style="margin:0;font-size:13px;opacity:.85">Hola de nuevo</p>
+    <h2 style="font-size:24px;margin:2px 0 6px">{{ paciente.nombres }} {{ paciente.apellidos }}</h2>
+    <p style="margin:0;font-size:13px;opacity:.9">Documento: {{ paciente.numero_documento }} · Edad: {{ paciente.calcular_edad() }} años · Estado: {{ paciente.estado.value }}</p>
+  </div>
+  <div class="kpis">
+    <div class="kpi k-amb"><i>🕒</i><div><b>{{ detalles_citas|selectattr('cita.estado_cita.value','equalto','PROGRAMADA')|list|length }}</b><em>Programadas</em></div></div>
+    <div class="kpi k-sky"><i>✅</i><div><b>{{ detalles_citas|selectattr('cita.estado_cita.value','equalto','CONFIRMADA')|list|length }}</b><em>Confirmadas</em></div></div>
+    <div class="kpi k-ok"><i>🩺</i><div><b>{{ detalles_citas|selectattr('cita.estado_cita.value','equalto','ATENDIDA')|list|length }}</b><em>Atendidas</em></div></div>
+    <div class="kpi k-red"><i>✖️</i><div><b>{{ detalles_citas|selectattr('cita.estado_cita.value','equalto','CANCELADA')|list|length }}</b><em>Canceladas</em></div></div>
+  </div>
+  <div class="atajos">
+    <button class="atajo" type="button" data-ir="v-agendar"><span>🗓️</span>Agendar nueva cita</button>
+    <button class="atajo" type="button" data-ir="v-espera"><span>⏳</span>Lista de espera</button>
+    <button class="atajo" type="button" data-ir="v-datos"><span>👤</span>Actualizar mis datos</button>
+  </div>
+  <div class="card">
+    <div class="fila" style="margin-bottom:14px"><h2>Historial de citas</h2>
+      <form method="get" class="fila" style="gap:8px"><select class="inp inp-sm" name="estado"><option value="">Todos los estados</option>{% for valor in ['PROGRAMADA','CONFIRMADA','ATENDIDA','CANCELADA'] %}<option value="{{ valor }}" {% if estado_seleccionado == valor %}selected{% endif %}>{{ etiquetas_cita[valor] }}</option>{% endfor %}</select><select class="inp inp-sm" name="orden"><option value="desc" {% if orden_seleccionado != 'asc' %}selected{% endif %}>Más recientes primero</option><option value="asc" {% if orden_seleccionado == 'asc' %}selected{% endif %}>Más antiguas primero</option></select><button class="btn btn-g btn-sm">Aplicar</button></form>
+    </div>
+    <div class="lista">
+    {% for detalle in detalles_citas %}{% set cita = detalle.cita %}
+      <article class="item">
+        <div class="fila"><p style="margin:0"><b>{{ cita.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</b> · {{ cita.tipo_consulta.value }}</p><span class="chip chip-{{ colores.get(cita.estado_cita.value,'slate') }}">{{ etiquetas_cita[cita.estado_cita.value] }}</span></div>
+        <div class="acciones">
+          <details style="width:100%"><summary class="btn btn-l btn-sm" style="display:inline-flex">🔍 Ver detalle</summary>
+            <dl class="det"><div><dt>Paciente</dt><dd>{{ paciente.nombres }} {{ paciente.apellidos }}</dd></div><div><dt>Identificación</dt><dd>{{ paciente.tipo_documento.value }} {{ paciente.numero_documento }}</dd></div><div><dt>Fecha y hora</dt><dd>{{ cita.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</dd></div><div><dt>Tipo de consulta</dt><dd>{{ cita.tipo_consulta.value }}</dd></div><div><dt>Doctor encargado</dt><dd>{{ detalle.medico.nombres if detalle.medico else 'No disponible' }} {{ detalle.medico.apellidos if detalle.medico else '' }}</dd></div><div><dt>Sede</dt><dd>{{ detalle.sede.nombre if detalle.sede else 'No disponible' }}</dd></div><div><dt>Estado de la cita</dt><dd>{{ etiquetas_cita[cita.estado_cita.value] }}</dd></div><div><dt>Estado de pago</dt><dd>{{ cita.estado_pago.value }}</dd></div><div><dt>Valor neto</dt><dd>${{ '%.2f'|format(cita.valor_neto) }}</dd></div>{% if cita.motivo_cancelacion %}<div><dt>Motivo de cancelación</dt><dd>{{ cita.motivo_cancelacion }}</dd></div>{% endif %}{% if cita.observaciones_atencion %}<div><dt>Observaciones</dt><dd>{{ cita.observaciones_atencion }}</dd></div>{% endif %}</dl>
+          </details>
+          {% if cita.estado_cita.value in ['PROGRAMADA','CONFIRMADA'] %}
+          <details style="width:100%"><summary class="btn btn-d btn-sm" style="display:inline-flex">✖️ Cancelar cita</summary>
+            <div class="panel-acc"><form action="/cancelar" method="post"><input type="hidden" name="id_cita" value="{{ cita.id }}"><input class="inp inp-sm" name="motivo" placeholder="Motivo de cancelación" required><label class="ck"><input name="confirmado" type="checkbox" value="true" required> Confirmo cancelar</label><button class="btn btn-d btn-sm">Cancelar</button></form></div>
+          </details>
+          <details style="width:100%"><summary class="btn btn-w btn-sm" style="display:inline-flex">🔁 Reagendar</summary>
+            <div class="panel-acc"><form action="/reagendar" method="post"><input type="hidden" name="id_cita" value="{{ cita.id }}"><input class="inp inp-sm" name="nueva_fecha_hora" type="datetime-local" required><button class="btn btn-w btn-sm">Reagendar</button></form></div>
+          </details>
+          {% endif %}
+        </div>
+      </article>
+    {% else %}<div class="vacio">📭 No hay citas que coincidan con el filtro seleccionado.</div>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="vista" id="v-agendar" hidden>
+  <div class="card">
+    <h2>Agendar cita</h2><p class="sub">Seleccione una sede; el sistema mostrará únicamente sus especialistas y bloques disponibles.</p>
+    <form method="post" action="/agendar" class="fg" id="formulario-agenda">
+      <label class="lbl">Sede<select class="inp" id="id_sede" name="id_sede" required><option value="">Seleccione una sede</option>{% for sede in sedes %}<option value="{{ sede.id }}">{{ sede.nombre }}</option>{% endfor %}</select></label>
+      <label class="lbl">Especialista<select class="inp" id="id_medico" name="id_medico" required disabled><option value="">Seleccione primero una sede</option>{% for medico in medicos %}<option value="{{ medico.id }}" data-sede="{{ medico.id_sede }}" data-consulta="{{ medico.especialidad.value }}" hidden>{{ medico.nombres }} {{ medico.apellidos }} — {{ medico.especialidad.value }}</option>{% endfor %}</select></label>
+      <label class="lbl">Fecha<input class="inp" id="fecha_consulta" type="date" min="{{ hoy }}" required></label>
+      <input id="fecha_hora" name="fecha_hora" type="hidden" required>
+      {% if paciente.es_menor_de_edad() %}<div class="aviso full"><p>Datos requeridos del acudiente para paciente menor de edad</p><div class="fg"><input class="inp" style="margin-top:0" name="nombre_acudiente" value="{{ paciente.nombre_acudiente }}" placeholder="Nombre del acudiente" required><input class="inp" style="margin-top:0" name="telefono_acudiente" value="{{ paciente.telefono_acudiente }}" inputmode="numeric" pattern="[0-9]+" placeholder="Teléfono del acudiente" required></div></div>{% endif %}
+      <label class="lbl">Tipo de consulta<select class="inp" id="tipo_consulta" name="tipo_consulta" required><option>OFTALMOLOGIA_GENERAL</option><option>OPTOMETRIA</option><option>CONTROL</option></select></label>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-p btn-bloque" type="button" id="consultar-disponibilidad">🔎 Consultar disponibilidad</button></div>
+      <div class="zona full"><p style="margin:0 0 4px;font-size:13px;font-weight:700">Horario disponible</p><p style="margin:0;font-size:13px;color:#64748b" id="mensaje-bloques">Seleccione un especialista y una fecha.</p><div class="slots" id="bloques-disponibles"></div></div>
+      <button class="btn btn-ok btn-bloque full" type="submit" style="padding:13px">✅ Solicitar cita</button>
+    </form>
+  </div>
+</section>
+
+<section class="vista" id="v-espera" hidden>
+  <div class="card">
+    <h2>Lista de espera</h2><p class="sub">Si no encuentra un horario conveniente, solicite disponibilidad prioritaria.</p>
+    <form action="/lista-espera" method="post" class="fg"><label class="lbl">Sede<select class="inp" name="id_sede" required>{% for sede in sedes %}<option value="{{ sede.id }}">{{ sede.nombre }}</option>{% endfor %}</select></label><label class="lbl">Tipo de consulta<select class="inp" name="tipo_consulta"><option>OFTALMOLOGIA_GENERAL</option><option>OPTOMETRIA</option><option>CONTROL</option></select></label><button class="btn btn-v btn-bloque full">⏳ Agregarme a lista de espera</button></form>
+    {% if registros_espera %}<p style="margin:14px 0 0"><span class="chip chip-emerald">Solicitudes activas: {{ registros_espera|length }}</span></p>{% endif %}
+  </div>
+</section>
+
+<section class="vista" id="v-datos" hidden>
+  <div class="card">
+    <h2>Mis datos de contacto</h2><p class="sub">Mantenga sus datos actualizados. El sistema valida el formato y registra la fecha de la última modificación.</p>
+    <form action="/mis-datos" method="post" class="fg">
+      <label class="lbl">Teléfono<input class="inp" name="telefono" inputmode="numeric" pattern="[0-9]+" value="{{ paciente.telefono }}" required></label>
+      <label class="lbl">Correo<input class="inp" type="email" name="correo" value="{{ paciente.correo }}" required></label>
+      <label class="lbl">Nombre del acudiente<input class="inp" name="nombre_acudiente" value="{{ paciente.nombre_acudiente }}" {% if paciente.es_menor_de_edad() %}required{% endif %}></label>
+      <label class="lbl">Teléfono del acudiente<input class="inp" name="telefono_acudiente" inputmode="numeric" pattern="[0-9]*" value="{{ paciente.telefono_acudiente }}" {% if paciente.es_menor_de_edad() %}required{% endif %}></label>
+      <div class="full fila" style="justify-content:flex-start"><button class="btn btn-p">💾 Guardar mis datos</button><span style="font-size:12px;color:#64748b">Última actualización: {{ paciente.fecha_ultima_actualizacion.strftime('%d/%m/%Y %H:%M') }}</span></div>
+    </form>
+  </div>
+</section>
+
+<script>
+const medico=document.getElementById('id_medico'),fecha=document.getElementById('fecha_consulta'),sede=document.getElementById('id_sede'),tipo=document.getElementById('tipo_consulta'),destino=document.getElementById('fecha_hora'),contenedor=document.getElementById('bloques-disponibles'),mensaje=document.getElementById('mensaje-bloques');
+function actualizarEspecialistas(){const sedeSeleccionada=sede.value;medico.value='';medico.disabled=!sedeSeleccionada;medico.options[0].textContent=sedeSeleccionada?'Seleccione un especialista':'Seleccione primero una sede';[...medico.options].slice(1).forEach(opcion=>{opcion.hidden=opcion.dataset.sede!==sedeSeleccionada;opcion.disabled=opcion.dataset.sede!==sedeSeleccionada;});destino.value='';contenedor.innerHTML='';mensaje.textContent=sedeSeleccionada?'Seleccione un especialista y una fecha.':'Seleccione una sede.';}
+sede.addEventListener('change',actualizarEspecialistas);medico.addEventListener('change',()=>{const opcion=medico.options[medico.selectedIndex];if(opcion.dataset.consulta)tipo.value=opcion.dataset.consulta;});
+document.getElementById('consultar-disponibilidad').addEventListener('click',async()=>{if(!sede.value||!medico.value||!fecha.value){mensaje.textContent='Seleccione sede, especialista y fecha.';return;}destino.value='';contenedor.innerHTML='';mensaje.textContent='Consultando disponibilidad…';const respuesta=await fetch(`/bloques-disponibles?id_sede=${encodeURIComponent(sede.value)}&id_medico=${encodeURIComponent(medico.value)}&fecha=${encodeURIComponent(fecha.value)}`);if(!respuesta.ok){const error=await respuesta.json();mensaje.textContent=error.detail||'No fue posible consultar la disponibilidad.';return;}const bloques=await respuesta.json();const libres=bloques.filter(bloque=>!bloque.ocupado).length;mensaje.textContent=bloques.length?(libres?'Seleccione uno de los horarios en azul; los rojos ya están ocupados:':'Todos los horarios de este día están ocupados.'):'Este médico no tiene jornada asignada ese día.';bloques.forEach(bloque=>{const hora=new Date(bloque.hora).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});const boton=document.createElement('button');boton.type='button';boton.textContent=hora;if(bloque.ocupado){boton.disabled=true;boton.title='Horario ya reservado';boton.className='slot-busy';}else{boton.className='slot';boton.onclick=()=>{destino.value=bloque.hora.slice(0,16);contenedor.querySelectorAll('button').forEach(elemento=>elemento.classList.remove('sel'));boton.classList.add('sel');mensaje.textContent=`Horario seleccionado: ${hora}.`;};}contenedor.appendChild(boton);});});
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script src="https://cdn.tailwindcss.com"></script><title>Acceso | Clínica Visual</title>
+<style>
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:linear-gradient(135deg,#0b1b33 0%,#0e7490 100%);color:#0f172a}
+.shell{display:grid;grid-template-columns:1fr 1fr;width:100%;max-width:900px;background:#fff;border-radius:28px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.4)}
+.hero{padding:44px 36px;color:#fff;background:linear-gradient(160deg,#0284c7,#14b8a6);display:flex;flex-direction:column;justify-content:center;gap:14px}
+.hero .logo{display:grid;place-items:center;width:64px;height:64px;border-radius:20px;background:rgba(255,255,255,.2);font-size:34px}
+.hero h1{margin:0;font-size:30px;font-weight:800;line-height:1.1}
+.hero p{margin:0;opacity:.9;font-size:14px;line-height:1.5}
+.form{padding:36px 32px}
+.tabs{display:flex;gap:6px;padding:5px;background:#f1f5f9;border-radius:14px;margin-bottom:22px}
+.tab{flex:1;padding:10px;border:0;border-radius:10px;background:transparent;font-weight:700;font-size:14px;font-family:inherit;color:#64748b;cursor:pointer;transition:.15s}
+.tab.on{background:#fff;color:#0369a1;box-shadow:0 2px 8px rgba(15,23,42,.1)}
+.g{display:grid;gap:12px}
+.g2{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+.inp{width:100%;padding:12px 14px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;font-size:14px;font-family:inherit;transition:.15s}
+.inp:focus{outline:0;border-color:#0ea5e9;box-shadow:0 0 0 4px rgba(14,165,233,.15)}
+.inp.border-red-500{border-color:#ef4444!important}
+.btn{width:100%;padding:13px;border:0;border-radius:12px;color:#fff;font-weight:800;font-size:14px;font-family:inherit;cursor:pointer;transition:.15s}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.b1{background:linear-gradient(135deg,#0284c7,#0ea5e9)}.b2{background:linear-gradient(135deg,#059669,#10b981)}
+.al{margin-bottom:16px;padding:12px 14px;border-radius:12px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-weight:600;font-size:14px}
+h2{margin:0 0 4px;font-size:22px;font-weight:800}.s{margin:0 0 18px;font-size:13px;color:#64748b}
+@media(max-width:760px){.shell{grid-template-columns:1fr}.hero{padding:26px}.hero h1{font-size:24px}.g2{grid-template-columns:1fr}}
+</style></head>
+<body>
+<main class="shell">
+  <section class="hero"><div class="logo">👁️</div><h1>Clínica Visual</h1><p>Gestione sus citas oftalmológicas de forma rápida: agende, reprograme y consulte su historial desde un solo lugar.</p></section>
+  <section class="form">
+    <div class="tabs"><button class="tab on" type="button" data-t="ingreso">Ingresar</button><button class="tab" type="button" data-t="registro">Registrarme</button></div>
+    {% if alerta %}<p class="al">⚠️ {{ alerta }}</p>{% endif %}
+    <div id="ingreso">
+      <h2>Bienvenido</h2><p class="s">Ingrese con su correo y contraseña.</p>
+      <form method="post" action="/login" class="g"><input class="inp" name="correo" type="email" placeholder="Correo" required><input class="inp" name="contrasena" type="password" placeholder="Contraseña" required><button class="btn b1">Ingresar →</button></form>
+    </div>
+    <div id="registro" hidden>
+      <h2>Registrar paciente</h2><p class="s">Complete sus datos para crear su cuenta.</p>
+      <form method="post" action="/registro-paciente" class="g">
+        <div class="g2"><select class="inp" name="tipo_documento"><option>CC</option><option>TI</option><option>CE</option><option>PASAPORTE</option></select><input class="inp" name="numero_documento" type="text" inputmode="numeric" pattern="[0-9]{1,10}" maxlength="10" placeholder="Documento: máximo 10 dígitos" required></div>
+        <div class="g2"><input class="inp" name="nombres" placeholder="Nombres" required><input class="inp" name="apellidos" placeholder="Apellidos" required></div>
+        <input class="inp" name="telefono" type="text" inputmode="numeric" pattern="[0-9]+" placeholder="Teléfono numérico" required>
+        <input class="inp" name="correo" type="email" placeholder="Correo" required>
+        <input class="inp" name="contrasena" type="password" placeholder="Contraseña" required>
+        <input class="inp" name="fecha_nacimiento" type="date" max="{{ hoy }}" required>
+        <div class="g2"><input class="inp" name="nombre_acudiente" placeholder="Acudiente si es menor"><input class="inp" name="telefono_acudiente" inputmode="numeric" pattern="[0-9]*" placeholder="Teléfono acudiente si es menor"></div>
+        <button class="btn b2">Registrarme</button>
+      </form>
+    </div>
+  </section>
+</main>
+<script>
+document.querySelectorAll('input[required]').forEach(c=>c.addEventListener('input',()=>c.classList.toggle('border-red-500',!c.checkValidity())));
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));['ingreso','registro'].forEach(id=>document.getElementById(id).hidden=id!==t.dataset.t);}));
+</script>
+</body></html>

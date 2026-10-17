@@ -1,0 +1,16 @@
+"""Excepciones de reglas de negocio."""
+
+
+class ConfirmacionRequeridaError(Exception): """Indica que falta una confirmación explícita."""
+class SobreasignacionMedicoError(Exception): """Indica que un médico ya tiene cita en el horario."""
+class LimiteDiarioAlcanzadoError(Exception): """Indica que se alcanzó el límite diario."""
+class DuplicidadRegistroError(Exception): """Indica que se intentó registrar un dato duplicado."""
+class MenorDeEdadSinAcudienteError(Exception): """Indica que un menor no tiene acudiente."""
+class HorarioFueraDeJornadaError(Exception): """Indica que un horario no pertenece a la jornada."""
+class AccesoFueraDeSedError(Exception): """Indica un acceso administrativo fuera de sede."""
+class MedicoConCitasFuturaError(Exception): """Indica que el médico tiene citas futuras."""
+class CredencialesInvalidasError(Exception): """Indica credenciales de acceso inválidas."""
+class UsuarioInactivoError(Exception): """Indica una cuenta inactiva o bloqueada."""
+class CampoObligatorioError(Exception): """Indica que falta un campo obligatorio."""
+class FormatoInvalidoError(Exception): """Indica que un dato no tiene el formato requerido."""
+class TransicionEstadoInvalidaError(Exception): """Indica una transición de estado no permitida."""

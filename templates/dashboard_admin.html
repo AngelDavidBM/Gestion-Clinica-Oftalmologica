@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block titulo %}Panel administrativo{% endblock %}
+{% block rol %}Administrador{% endblock %}
+{% block encabezado %}Resumen de la sede{% endblock %}
+{% block menu %}
+<button class="nav-btn" type="button" data-ir="v-resumen" data-titulo="Resumen de la sede"><span>📊</span>Resumen</button>
+<button class="nav-btn" type="button" data-ir="v-medicos" data-titulo="Especialistas"><span>🧑‍⚕️</span>Especialistas</button>
+<button class="nav-btn" type="button" data-ir="v-horarios" data-titulo="Jornadas y límites"><span>🕒</span>Jornadas y límites</button>
+<button class="nav-btn" type="button" data-ir="v-usuarios" data-titulo="Usuarios y cuentas"><span>👥</span>Usuarios</button>
+<button class="nav-btn" type="button" data-ir="v-sede" data-titulo="Sedes"><span>🏥</span>Sedes</button>
+<button class="nav-btn" type="button" data-ir="v-auditoria" data-titulo="Bitácora de auditoría"><span>🧾</span>Auditoría</button>
+{% endblock %}
+{% block contenido %}
+
+<section class="vista" id="v-resumen">
+  <div class="kpis">
+    <div class="kpi k-ok"><i>🩺</i><div><b>{{ reporte.total_citas_atendidas }}</b><em>Citas atendidas</em></div></div>
+    <div class="kpi k-sky"><i>💰</i><div><b>${{ '%.2f'|format(reporte.total_ingresos) }}</b><em>Ingresos generados</em></div></div>
+    <div class="kpi k-red"><i>✖️</i><div><b>{{ reporte.citas_canceladas }}</b><em>Citas canceladas</em></div></div>
+    <div class="kpi k-vio"><i>🧑‍⚕️</i><div><b>{{ medicos|length }}</b><em>Especialistas activos</em></div></div>
+  </div>
+  <div class="atajos">
+    <button class="atajo" type="button" data-ir="v-medicos"><span>➕</span>Registrar especialista</button>
+    <button class="atajo" type="button" data-ir="v-usuarios"><span>🔐</span>Registrar usuario</button>
+    <button class="atajo" type="button" data-ir="v-horarios"><span>🕒</span>Editar jornadas</button>
+    <button class="atajo" type="button" data-ir="v-sede"><span>🏥</span>Datos de la sede</button>
+  </div>
+  <div class="card">
+    <h2>Reporte consolidado</h2><p class="sub">Elija el rango de fechas y genere o exporte el reporte.</p>
+    <form method="get" class="fila" style="justify-content:flex-start;align-items:flex-end;gap:12px">
+      <label class="lbl">Fecha inicial<input class="inp" type="date" name="fecha_inicio" value="{{ fecha_inicio }}" required></label>
+      <label class="lbl">Fecha final<input class="inp" type="date" name="fecha_fin" value="{{ fecha_fin }}" required></label>
+      <button class="btn btn-p">📊 Generar reporte</button>
+      <a class="btn btn-g" href="/reportes/exportar?id_sede={{ id_sede }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}">⬇️ Exportar CSV</a>
+    </form>
+    <h3>Desglose por especialidad</h3>
+    <div class="acciones" style="margin-top:6px">{% for especialidad, cantidad in reporte.desglose_por_especialidad.items() %}<span class="chip chip-sky" style="font-size:13px;padding:8px 14px">{{ especialidad.value }}: <b>{{ cantidad }}</b></span>{% else %}<div class="vacio" style="width:100%">📭 No hay citas atendidas en este rango.</div>{% endfor %}</div>
+  </div>
+</section>
+
+<section class="vista" id="v-medicos" hidden>
+  <div class="card">
+    <h2>Especialistas activos</h2><p class="sub">Edite su información o desactívelos desde cada tarjeta.</p>
+    <div class="lista">
+    {% for medico in medicos %}
+      <article class="item">
+        <div class="fila"><p style="margin:0"><b>{{ medico.nombres }} {{ medico.apellidos }}</b><span style="display:block;font-size:13px;color:#64748b">{{ medico.telefono }} · {{ medico.correo }}</span></p><span class="chip chip-violet">{{ medico.especialidad.value }}</span></div>
+        <details style="margin-top:10px"><summary class="btn btn-p btn-sm" style="display:inline-flex">✏️ Editar información</summary>
+          <div class="panel-acc"><form class="fg formulario-edicion" data-id="{{ medico.id }}"><input class="inp" style="margin-top:0" name="nombres" value="{{ medico.nombres }}" required><input class="inp" style="margin-top:0" name="apellidos" value="{{ medico.apellidos }}" required><input class="inp" style="margin-top:0" name="telefono" value="{{ medico.telefono }}" required><input class="inp" style="margin-top:0" type="email" name="correo" value="{{ medico.correo }}" required><button class="btn btn-p btn-bloque full">💾 Guardar cambios</button></form></div>
+        </details>
+        <details style="margin-top:8px"><summary class="btn btn-d btn-sm" style="display:inline-flex">🚫 Desactivar médico</summary>
+          <div class="panel-acc"><form action="/medicos/{{ medico.id }}/desactivar?id_sede={{ id_sede }}" method="post"><label class="ck"><input name="confirmado" type="checkbox" value="true" required> Confirmo desactivar</label><button class="btn btn-d btn-sm">Desactivar médico</button></form></div>
+        </details>
+      </article>
+    {% else %}<div class="vacio">📭 No hay médicos activos.</div>{% endfor %}
+    </div>
+  </div>
+  <div class="card">
+    <h2>Registrar médico</h2><p class="sub">Cree un nuevo especialista en esta sede.</p>
+    <form action="/medicos?id_sede={{ id_sede }}" method="post" class="fg">
+      <select class="inp" style="margin-top:0" name="tipo_documento"><option>CC</option><option>TI</option><option>CE</option><option>PASAPORTE</option></select>
+      <input class="inp" style="margin-top:0" name="numero_documento" inputmode="numeric" pattern="[0-9]{1,10}" maxlength="10" placeholder="Documento único: máximo 10 dígitos" required>
+      <input class="inp" style="margin-top:0" name="nombres" placeholder="Nombres" required>
+      <input class="inp" style="margin-top:0" name="apellidos" placeholder="Apellidos" required>
+      <input class="inp" style="margin-top:0" name="telefono" inputmode="numeric" pattern="[0-9]+" placeholder="Teléfono numérico" required>
+      <input class="inp" style="margin-top:0" type="email" name="correo" placeholder="Correo" required>
+      <input class="inp" style="margin-top:0" type="password" name="contrasena" placeholder="Contraseña" required>
+      <select class="inp" style="margin-top:0" name="especialidad"><option>OFTALMOLOGIA_GENERAL</option><option>OPTOMETRIA</option><option>CONTROL</option></select>
+      <button class="btn btn-p btn-bloque full">➕ Registrar especialista</button>
+    </form>
+  </div>
+  <div class="card">
+    <h2>Reasignar especialista a esta sede</h2><p class="sub">La asignación la realiza el administrador de la sede destino.</p>
+    <form method="post" class="fila" style="justify-content:flex-start" id="formulario-reasignacion"><select class="inp inp-sm" style="min-width:280px" id="medico-reasignar" required><option value="">Seleccione especialista de otra sede</option>{% for medico in medicos_reasignables %}<option value="{{ medico.id }}">{{ medico.nombres }} {{ medico.apellidos }} — {{ medico.especialidad.value }}</option>{% endfor %}</select><button class="btn btn-v">🔀 Asignar a esta sede</button></form>
+    {% if not medicos_reasignables %}<p class="sub" style="margin:12px 0 0">No hay especialistas activos para reasignar.</p>{% endif %}
+  </div>
+</section>
+
+<section class="vista" id="v-horarios" hidden>
+  <div class="card">
+    <h2>Jornada de especialistas</h2><p class="sub">Configure dos bloques diarios en intervalos de 30 minutos. No pueden superponerse.</p>
+    <div class="lista">
+    {% for medico in medicos %}
+      <form action="/medicos/{{ medico.id }}/jornada?id_sede={{ id_sede }}" method="post" class="item">
+        <p style="margin:0 0 10px;font-weight:700">{{ medico.nombres }} {{ medico.apellidos }}</p>
+        <div class="fg" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
+          <label class="lbl">☀️ Inicio mañana<input class="inp" type="time" name="hora_inicio_manana" value="{{ medico.hora_inicio_manana.strftime('%H:%M') }}" step="1800" required></label>
+          <label class="lbl">☀️ Fin mañana<input class="inp" type="time" name="hora_fin_manana" value="{{ medico.hora_fin_manana.strftime('%H:%M') }}" step="1800" required></label>
+          <label class="lbl">🌙 Inicio tarde<input class="inp" type="time" name="hora_inicio_tarde" value="{{ medico.hora_inicio_tarde.strftime('%H:%M') }}" step="1800" required></label>
+          <label class="lbl">🌙 Fin tarde<input class="inp" type="time" name="hora_fin_tarde" value="{{ medico.hora_fin_tarde.strftime('%H:%M') }}" step="1800" required></label>
+          <div style="display:flex;align-items:flex-end"><button class="btn btn-p btn-bloque">💾 Guardar jornada</button></div>
+        </div>
+      </form>
+    {% else %}<div class="vacio">📭 No hay especialistas activos en esta sede.</div>{% endfor %}
+    </div>
+  </div>
+  <div class="card">
+    <h2>Límite de citas por día</h2><p class="sub">Define cuántas citas acepta cada especialista en una misma fecha, sin superar los bloques de su jornada.</p>
+    <div class="lista">
+    {% for medico in medicos %}
+      <form action="/medicos/{{ medico.id }}/limite-diario?id_sede={{ id_sede }}" method="post" class="item fila"><span style="font-weight:600">{{ medico.nombres }} {{ medico.apellidos }} <span class="chip">actual: {{ medico.max_citas_dia }} citas</span></span><div class="fila" style="gap:10px"><label class="lbl" style="display:flex;align-items:center;gap:8px">Máximo diario<input class="inp inp-sm" style="width:90px" type="number" name="max_citas_dia" min="1" max="16" value="{{ medico.max_citas_dia }}" required></label><button class="btn btn-p btn-sm">💾 Guardar límite</button></div></form>
+    {% else %}<div class="vacio">📭 No hay especialistas activos en esta sede.</div>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="vista" id="v-usuarios" hidden>
+  <div class="card">
+    <h2>Registrar usuario interno</h2><p class="sub">Cree credenciales para secretaría o para otro administrador de esta sede.</p>
+    <form action="/usuarios?id_sede={{ id_sede }}" method="post" class="fg">
+      <select class="inp" style="margin-top:0" name="rol" required><option value="SECRETARIA">Secretaría</option><option value="ADMINISTRADOR">Administrador de esta sede</option></select>
+      <select class="inp" style="margin-top:0" name="tipo_documento"><option>CC</option><option>TI</option><option>CE</option><option>PASAPORTE</option></select>
+      <input class="inp" style="margin-top:0" name="numero_documento" inputmode="numeric" pattern="[0-9]{1,10}" maxlength="10" placeholder="Documento único: máximo 10 dígitos" required>
+      <input class="inp" style="margin-top:0" name="nombres" placeholder="Nombres" required>
+      <input class="inp" style="margin-top:0" name="apellidos" placeholder="Apellidos" required>
+      <input class="inp" style="margin-top:0" name="telefono" inputmode="numeric" pattern="[0-9]+" placeholder="Teléfono numérico" required>
+      <input class="inp" style="margin-top:0" type="email" name="correo" placeholder="Correo" required>
+      <input class="inp" style="margin-top:0" type="password" name="contrasena" placeholder="Contraseña" required>
+      <button class="btn btn-v btn-bloque full">🔐 Registrar usuario</button>
+    </form>
+  </div>
+  <div class="card">
+    <h2>Usuarios activos de la sede</h2>
+    <div class="lista" style="margin-top:12px">
+    {% for usuario in usuarios_activos %}
+      <div class="item fila"><span style="font-weight:600">{{ usuario.nombres }} {{ usuario.apellidos }}<span style="display:block;margin-top:4px"><span class="chip chip-sky">{{ usuario.rol.value }}</span> <span class="chip chip-emerald">{{ usuario.estado.value }}</span></span></span>{% if usuario.rol.value != 'ADMINISTRADOR' %}<form action="/usuarios/{{ usuario.id }}/inactivar?id_sede={{ id_sede }}" method="post" class="fila" style="gap:10px"><label class="ck"><input name="confirmado" type="checkbox" value="true" required> Confirmar</label><button class="btn btn-w btn-sm">⏸️ Inactivar</button></form>{% endif %}</div>
+    {% else %}<div class="vacio">📭 No hay usuarios activos para esta sede.</div>{% endfor %}
+    </div>
+  </div>
+  <div class="card">
+    <h2>Estado de las cuentas</h2><p class="sub">Una cuenta inactiva o bloqueada conserva todo su historial y no puede iniciar sesión. Puede reactivarla cuando lo requiera.</p>
+    <div class="lista">
+    {% for usuario in usuarios_gestionables %}
+      <form action="/usuarios/{{ usuario.id }}/estado?id_sede={{ id_sede }}" method="post" class="item fila"><span style="font-size:14px;font-weight:600">{{ usuario.nombres }} {{ usuario.apellidos }}<span style="display:block;font-size:12px;font-weight:400;color:#64748b">{{ usuario.rol.value }} · Documento: {{ usuario.numero_documento }} · <b>{{ usuario.estado.value }}</b></span></span><div class="fila" style="gap:10px"><select class="inp inp-sm" name="nuevo_estado" required>{% for estado in estados_usuario %}<option value="{{ estado }}" {% if usuario.estado.value == estado %}disabled{% endif %}>{{ estado }}</option>{% endfor %}</select><label class="ck"><input name="confirmado" type="checkbox" value="true" required> Confirmo</label><button class="btn btn-w btn-sm">🔄 Cambiar estado</button></div></form>
+    {% else %}<div class="vacio">📭 No hay cuentas administrables desde esta sede.</div>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="vista" id="v-sede" hidden>
+  <div class="card">
+    <h2>Información y recursos de la sede</h2><p class="sub">Actualice los datos de la sede que administra. Las demás sedes se muestran solo como consulta.</p>
+    <form action="/sedes/{{ sede_actual.id }}?id_sede={{ id_sede }}" method="post" class="fg">
+      <label class="lbl">Nombre<input class="inp" name="nombre" value="{{ sede_actual.nombre }}" required></label>
+      <label class="lbl">Dirección<input class="inp" name="direccion" value="{{ sede_actual.direccion }}" required></label>
+      <label class="lbl">Consultorios<input class="inp" type="number" name="numero_consultorios" min="1" max="100" value="{{ sede_actual.numero_consultorios }}" required></label>
+      <button class="btn btn-p btn-bloque full">💾 Guardar información de la sede</button>
+    </form>
+    <p style="margin:12px 0 0;font-size:12px;color:#64748b">Última actualización: {{ sede_actual.fecha_ultima_actualizacion.strftime('%d/%m/%Y %H:%M') }}</p>
+  </div>
+  <div class="card">
+    <h2>Sedes registradas</h2>
+    <div class="lista" style="margin-top:12px">{% for sede in sedes %}<div class="item fila"><span style="font-weight:600">🏥 {{ sede.nombre }}<span style="display:block;font-size:13px;font-weight:400;color:#64748b">{{ sede.direccion }}</span></span><div><span class="chip">{{ sede.numero_consultorios }} consultorios</span> <span class="chip chip-violet">{{ conteo_medicos.get(sede.id, 0) }} especialistas activos</span>{% if sede.id == id_sede %} <span class="chip chip-sky">Sede que administra</span>{% endif %}</div></div>{% endfor %}</div>
+    <details style="margin-top:16px"><summary class="btn btn-v btn-sm" style="display:inline-flex">➕ Registrar una sede nueva</summary>
+      <div class="panel-acc"><form action="/sedes?id_sede={{ id_sede }}" method="post" class="fg" style="width:100%"><input class="inp" style="margin-top:0" name="nombre" placeholder="Nombre de la sede" required><input class="inp" style="margin-top:0" name="direccion" placeholder="Dirección" required><input class="inp" style="margin-top:0" type="number" name="numero_consultorios" min="1" max="100" placeholder="Consultorios" required><button class="btn btn-v btn-bloque full">Registrar sede</button></form></div>
+    </details>
+  </div>
+</section>
+
+<section class="vista" id="v-auditoria" hidden>
+  <div class="card">
+    <div class="fila" style="margin-bottom:6px"><div><h2>Bitácora de auditoría</h2><p class="sub" style="margin:0">Registra cada operación que modifica información: quién la ejecutó, cuándo y con qué resultado. Usa el mismo rango de fechas del reporte consolidado.</p></div><a class="btn btn-g btn-sm" href="/auditoria/exportar?id_sede={{ id_sede }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}">⬇️ Exportar bitácora CSV</a></div>
+    <div style="overflow-x:auto;margin-top:14px"><table class="tabla"><thead><tr><th>Fecha y hora</th><th>Acción</th><th>Rol</th><th>Resultado</th></tr></thead><tbody>{% for registro in bitacora %}<tr><td>{{ registro.fecha_hora.strftime('%d/%m/%Y %H:%M:%S') }}</td><td>{{ registro.accion }}</td><td>{{ registro.rol }}</td><td>{% if registro.fue_exitoso() %}<span class="chip chip-emerald">Exitosa ({{ registro.resultado }})</span>{% else %}<span class="chip chip-red">Rechazada ({{ registro.resultado }})</span>{% endif %}</td></tr>{% else %}<tr><td colspan="4" style="color:#64748b">No hay eventos registrados en el rango seleccionado.</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+</section>
+
+<script>document.querySelectorAll('.formulario-edicion').forEach(formulario=>formulario.addEventListener('submit',async evento=>{evento.preventDefault();const datos=Object.fromEntries(new FormData(formulario));const respuesta=await fetch(`/medicos/${formulario.dataset.id}?id_sede={{ id_sede }}`,{method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(datos)});const contenido=await respuesta.json();alert(respuesta.ok?'Especialista actualizado.':contenido.detail||'No fue posible actualizar.');if(respuesta.ok)location.reload();}));document.getElementById('formulario-reasignacion').addEventListener('submit',async evento=>{evento.preventDefault();const id=document.getElementById('medico-reasignar').value;if(!id)return;const respuesta=await fetch(`/medicos/${id}/asignar-sede?id_sede={{ id_sede }}`,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({nuevo_id_sede:'{{ id_sede }}'})});const contenido=await respuesta.json();alert(respuesta.ok?'Especialista reasignado.':contenido.detail||'No fue posible reasignar.');if(respuesta.ok)location.reload();});</script>
+{% endblock %}
