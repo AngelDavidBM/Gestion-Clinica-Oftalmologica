@@ -5,6 +5,8 @@ source .venv/bin/activate
 Ejecucion
 uvicorn main:app --reload
 
+Accede al link que esta en la terminal
+
 Los datos se guardan en la base de datos SQLite `clinica.db` (se crea sola la
 primera vez que se corre la aplicación). Para usar otra ruta o una base de
 datos en memoria (usada por las pruebas automáticas), defina la variable de
