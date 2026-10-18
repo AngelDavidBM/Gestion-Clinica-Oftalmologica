@@ -1,13 +1,14 @@
 """Punto de entrada de la aplicación de citas oftalmológicas.
+/Activacion de entorno
 source .venv/bin/activate
+
+Ejecucion
 uvicorn main:app --reload
 
 Los datos se guardan en la base de datos SQLite `clinica.db` (se crea sola la
 primera vez que se corre la aplicación). Para usar otra ruta o una base de
 datos en memoria (usada por las pruebas automáticas), defina la variable de
 entorno CLINICA_DB_PATH antes de iniciar el servidor.
-
-
 
 """
 
