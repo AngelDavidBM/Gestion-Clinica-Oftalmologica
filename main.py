@@ -7,11 +7,7 @@ primera vez que se corre la aplicación). Para usar otra ruta o una base de
 datos en memoria (usada por las pruebas automáticas), defina la variable de
 entorno CLINICA_DB_PATH antes de iniciar el servidor.
 
-Credenciales semilla:
-- Administrador Norte:  admin.norte@clinica.com/ AdminNorte2026
-- Administrador Sur: admin.sur@clinica.com / AdminSur2026
-- Secretaria: secretaria@clinica.com / Secretaria2026
-- Paciente: paciente@clinica.com / Paciente2026
+
 
 """
 
